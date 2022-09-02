@@ -1,0 +1,27 @@
+header {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+}
+
+header h2 {
+    display: flex;
+    justify-content: space-around;
+    font-size: 120%;
+    font-weight: 100; /* unbold header font */
+    margin: auto 0px;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    margin: 40px 120px;
+}
+
+main h1 {
+    font-size: 200%;
+    padding: 5px;
+}
+
