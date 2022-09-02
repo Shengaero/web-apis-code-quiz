@@ -1,3 +1,9 @@
+var mainBodyContent = document.querySelector("main"); // main body content
+var quizHeader = document.querySelector("#quiz-header"); // header, will reuse to prompt each question
+var quizDescription = document.querySelector("#quiz-description"); // description, will remove when quiz starts
+var startQuizButton = document.querySelector("#start-quiz-button"); // start quiz button, will start quiz
+var questionNumber = -1; // this will keep track of which question we are on
+
 /*
 Questions will be js objects with the following format:
 {
@@ -9,7 +15,6 @@ Questions will be js objects with the following format:
     answer: <string with either A, B, C, or D>
 }
 */
-
 // Because it couldn't be easy, guess it has to be messy 🙄
 var questions = [
     {
@@ -66,8 +71,6 @@ function shuffleQuestions() {
 
 shuffleQuestions();
 
-var questionNumber = -1; // this will keep track of which question we are on
-
 // good for helping get the current question without reusing code
 function getCurrentQuestion() {
     if(questionNumber < 0 || questionNumber > questions.length - 1) {
@@ -75,11 +78,6 @@ function getCurrentQuestion() {
     }
     return questions[questionNumber];
 }
-
-var mainBodyContent = document.querySelector("main"); // main body content
-var quizHeader = document.querySelector("#quiz-header"); // header, will reuse to prompt each question
-var quizDescription = document.querySelector("#quiz-description"); // description, will remove when quiz starts
-var startQuizButton = document.querySelector("#start-quiz-button"); // start quiz button, will start quiz
 
 // save default quiz header and description text to reload later
 var defaultQuizHeaderText = quizHeader.textContent;
