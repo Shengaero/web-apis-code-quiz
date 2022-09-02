@@ -2,7 +2,21 @@ var mainBodyContent = document.querySelector("main"); // main body content
 var quizHeader = document.querySelector("#quiz-header"); // header, will reuse to prompt each question
 var quizDescription = document.querySelector("#quiz-description"); // description, will remove when quiz starts
 var startQuizButton = document.querySelector("#start-quiz-button"); // start quiz button, will start quiz
+var timeSpan = document.querySelector("#time"); // time span, control to modify displayed time left to complete quiz
 var questionNumber = -1; // this will keep track of which question we are on
+var timeLeft = 0; // start at 0
+var timerInterval = undefined; // keep this undefined when timer is not running
+
+// keep this process of updating time as a function to prevent any misbehavior between various elements/variables
+function updateTime(skipRemaining) {
+    // if true, update time left to 0 before updating span
+    if(skipRemaining) {
+        timeLeft = 0;
+    }
+
+    // update span
+    timeSpan.textContent = timeLeft.toString();
+}
 
 /*
 Questions will be js objects with the following format:
@@ -122,15 +136,20 @@ function loadNextQuestion() {
     return true; // return true if there was a next question loaded
 }
 
-function endQuiz() {
+function endQuiz(timeOut) {
+    clearInterval(timerInterval); // clear the interval for the timer
+    updateTime(timeOut); // update the time while setting displayed timer to zero
     questionNumber = -1; // reset question number
     shuffleQuestions(); // shuffle questions again
     optionList.remove(); // remove option list
 
     // Display that quiz is done
     quizHeader.textContent = "All done!";
-    quizDescription.textContent = "Your final score is: ";
+    quizDescription.textContent = "Your final score is: " + timeLeft;
     mainBodyContent.append(quizDescription);
+
+    // End time
+
 
     // TODO implement score
     // TODO implement high scores list
@@ -143,11 +162,29 @@ function endQuiz() {
 // WHEN the quiz ends
 // THEN display a screen for the user to input their name to go on a high score list
 function onOptionButtonPress(event) {
-    // quiz ends if return is false
-    if(!loadNextQuestion()) {
-        endQuiz()
-    } else {
+    var buttonId = event.target.id;
+    var correct = buttonId === questions[questionNumber].answer;
+    // if the answer was incorrect, we need to deduct remaining time and possibly end the quiz
+    if(!correct) {
+        // first, deduct 15 seconds for an incorrect answer, or if there is less than 15 seconds left set to 0;
+        timeLeft = Math.max(timeLeft - 15, 0);
+        // next, check if it's greater than 0
+        if(timeLeft > 0) {
+            // if it is, we update the time remaining on the page without ending the quiz
+            updateTime(false);
+        } else {
+            // otherwise, we end the quiz: the deduction resulted in time running out
+            endQuiz(true);
+            return; // we can return here
+        }
     }
+
+    // if we try to load another question but none remain, that was the last question
+    if(!loadNextQuestion()) {
+        endQuiz(false);
+    }
+
+    // TODO display whether the last answer was correct or incorrect
 }
 
 // iterate across each button and setup listener and DOM stuff
@@ -168,8 +205,28 @@ buttons.forEach((button) => {
 
 // add event listener to start the quiz
 startQuizButton.addEventListener('click', function(event) {
+    // preload first question
+    loadNextQuestion();
+
     quizDescription.remove(); // remove the description
     startQuizButton.remove(); // remove the start quiz button
-    mainBodyContent.appendChild(optionList); // append the list, this will now be modifyable
-    loadNextQuestion();
+
+     // append the list, this will now be modifyable
+    mainBodyContent.appendChild(optionList);
+    // start timer with 75 seconds on the clock
+    timeLeft = 75;
+    // update the time on the page
+    updateTime(false);
+    // start an interval
+    timerInterval = setInterval(() => {
+        // deincrement one second;
+        timeLeft--;
+        // if time runs out -> clear interval and skip to end of quiz
+        if(timeLeft <= 0) {
+            endQuiz(); // this will also update the time
+        } else {
+            // just update time to reflect the interval running
+            updateTime(false);
+        }
+    }, 1000); // ms (runs once every second)
 });
