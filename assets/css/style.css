@@ -1,3 +1,8 @@
+:root {
+    --button-color: violet;
+    --button-hover-color: 177, 29, 177;
+}
+
 header {
     display: flex;
     flex-direction: row;
@@ -31,11 +36,16 @@ main {
     padding: 5px;
     width: 80%;
     margin-bottom: 20px;
+    text-align: center;
 }
 
 #quiz-description {
     width: 80%;
-    margin-bottom: 20px;
+    text-align: center;
+}
+
+#quiz-button {
+    margin-top: 20px;
 }
 
 main ol {
@@ -43,11 +53,46 @@ main ol {
     flex-direction: column;
     justify-content: space-around;
     width: 80%;
+    height: 120px;
 }
 
 /* all button classes who's IDs start with "quiz-button" */
 button[id^="quiz-button"] {
-    background-color: violet;
+    cursor: pointer;
+    background-color: var(--button-color);
+    border-radius: 7px;
+    padding: 2px 5px; /* 2px top and bottom, 5px left and right */
+    position: relative;
+    border-width: 1px;
+}
+
+button[id^="quiz-button"]::before {
+    content: "";
+    display: block;
+    position: absolute;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    background-color: rgba(var(--button-hover-color), 0.0);
+}
+
+button[id^="quiz-button"]:hover::before {
+    background-color: rgba(var(--button-hover-color), 0.3);
+    transition: all 0.2s ease-in-out;
+}
+
+#question-result {
+    text-align: left;
+    width: 80%;
+    padding-top: 15px;
+    margin-top: 15px;
+    border-top-width: 2px;
+    border-top-style: solid;
+    border-top-color: grey;
+    color: grey;
+    font-style: italic;
 }
 
 /* medium sized screens */

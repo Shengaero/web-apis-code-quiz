@@ -9,6 +9,11 @@ var timeSpan = document.querySelector("#time"); // time span, control to modify 
 var questionNumber = -1; // this will keep track of which question we are on
 var timeLeft = 0; // start at 0
 var timerInterval = undefined; // keep this undefined when timer is not running
+var resultInterval = undefined; // keep this undefined when span is not appended
+
+function alignText(element, type) {
+    element.setAttribute("style", "text-align: " + type + ";");
+}
 
 // keep this process of updating time as a function to prevent any misbehavior between various elements/variables
 function updateTime(skipRemaining) {
@@ -117,6 +122,35 @@ buttonD.id = quizButtonIDStart + "-d";
 // array of buttons is good for iterating
 var buttons = [buttonA, buttonB, buttonC, buttonD];
 
+// create a span for telling the user if their last answer was correct or incorrect, we will reuse this as necessary.
+var questionResultSpan = document.createElement("span");
+questionResultSpan.id = "question-result";
+
+function displayQuestionResultSpan(correct, endQuiz) {
+    questionResultSpan.textContent = correct? "Correct!" : "Wrong";
+
+    if(resultInterval !== undefined) {
+        // if the result interval is not undefined we currently have an interval handling the span disappearing automatically
+        // as a result, we need to clear the interval prematurally as we want to re-use the span that is already appended.
+        clearInterval(resultInterval);
+        // if it's the end of the quiz, we need to remove and reappend the result span or else it will appear improperly on the screen
+        if(endQuiz) {
+            questionResultSpan.remove();
+            mainBodyContent.append(questionResultSpan);
+        }
+    } else {
+        // otherwise we append the span, if the interval is undefined that means the last interval handling the span disappearing
+        // automatically ran, and thus the span needs to be re-appended.
+        mainBodyContent.append(questionResultSpan);
+    }
+
+    resultInterval = setInterval(() => {
+        questionResultSpan.remove();
+        clearInterval(resultInterval);
+        resultInterval = undefined;
+    }, 1500); // 1.5 seconds
+}
+
 function loadNextQuestion() {
     questionNumber++; // increment current question number before we load the question so we get the next one
     var question = getCurrentQuestion();
@@ -132,8 +166,12 @@ function loadNextQuestion() {
     quizHeader.textContent = question.prompt;
 
     buttons.forEach((button) => {
+        // get the choice attribute
+        var choice = button.getAttribute(choiceAttribute);
         // set the text content of the button to the property matching the button element's choice attribute
-        button.textContent = question[button.getAttribute(choiceAttribute)];
+        // format should be like:
+        // <choice>: <choice here>
+        button.textContent = choice.toUpperCase() + ": " + question[choice];
     });
 
     return true; // return true if there was a next question loaded
@@ -148,7 +186,9 @@ function endQuiz(timeOut) {
 
     // Display that quiz is done
     quizHeader.textContent = "All done!";
+    alignText(quizHeader, "left"); // should already be left aligned but just in case.
     quizDescription.textContent = "Your final score is: " + timeLeft;
+    alignText(quizDescription, "left"); // align left
     mainBodyContent.append(quizDescription);
 
     // End time
@@ -159,9 +199,16 @@ function endQuiz(timeOut) {
     // TODO implement replay loop
 }
 
+function resetDefaultPageText() {
+    quizHeader.textContent = defaultQuizHeaderText;
+    alignText(quizHeader, "center");
+    quizDescription.textContent = defaultQuizDescriptionText;
+    alignText(quizDescription, "center");
+
+    // do not reappend elements, let other places do that
+}
+
 // TODO
-// WHEN the button is pressed
-// THEN display the next question, as well as if the answer was right or wrong
 // WHEN the quiz ends
 // THEN display a screen for the user to input their name to go on a high score list
 function onOptionButtonPress(event) {
@@ -178,6 +225,7 @@ function onOptionButtonPress(event) {
         } else {
             // otherwise, we end the quiz: the deduction resulted in time running out
             endQuiz(true);
+            displayQuestionResultSpan(correct, true);
             return; // we can return here
         }
     }
@@ -185,9 +233,12 @@ function onOptionButtonPress(event) {
     // if we try to load another question but none remain, that was the last question
     if(!loadNextQuestion()) {
         endQuiz(false);
+        displayQuestionResultSpan(correct, true);
+        return;
     }
 
     // TODO display whether the last answer was correct or incorrect
+    displayQuestionResultSpan(correct, false);
 }
 
 // iterate across each button and setup listener and DOM stuff
@@ -196,15 +247,20 @@ buttons.forEach((button) => {
     button.addEventListener('click', onOptionButtonPress);
     // create list item and span for label
     var listItem = document.createElement("li");
-    var labelSpan = document.createElement("span");
-     // last char of id is choice
+
+    // var labelSpan = document.createElement("span");
+
+    // last char of id is choice
     var choice = button.id.charAt(button.id.length - 1);
-     // set choice attribute to the letter of the choice
+    // set choice attribute to the letter of the choice
     button.setAttribute(choiceAttribute, choice);
-     // set the span label text to the letter of the choice
-    labelSpan.textContent = choice.toUpperCase();
+
+    // set the span label text to the letter of the choice
+    // labelSpan.textContent = choice.toUpperCase() + ": ";
+
     // append span to list item
-    listItem.appendChild(labelSpan);
+    // listItem.appendChild(labelSpan);
+
     // then append button
     listItem.appendChild(button);
     // finally, put it on the list
@@ -218,6 +274,7 @@ startQuizButton.addEventListener('click', function(event) {
 
     quizDescription.remove(); // remove the description
     startQuizButton.remove(); // remove the start quiz button
+    alignText(quizHeader, "left");
 
      // append the list, this will now be modifyable
     mainBodyContent.appendChild(optionList);
