@@ -2,6 +2,8 @@ var quizButtonIDStart = "quiz-button"; // all quiz buttons have an ID that start
 var choiceAttribute = "choice"; // this will be the name of the custom attribute that holds the choice of the option
 var quizScoresLocalStorageKey = "quiz_scores"; // key for quiz scores which are stored in the local storage
 
+var pageHeader = document.querySelector("header"); // page header
+var highscoresTab = document.querySelector("#highscores-tab");
 var mainBodyContent = document.querySelector("main"); // main body content
 var quizHeader = document.querySelector("#quiz-header"); // header, will reuse to prompt each question
 var quizDescription = document.querySelector("#quiz-description"); // description, will remove when quiz starts
@@ -42,10 +44,25 @@ function saveScores() {
 
 function addScore(name, score) {
     scores[name] = score;
+    // if a new entry was added to the scores array, we need to create a new element
+    if(scores.length > scoreListElements.length) {
+        var el = document.createElement("li");
+        el.textContent = ". " + name + " - " + score;
+        el.setAttribute("name", name);
+        el.setAttribute("score", score.toString());
+        scoreListElements.push(el);
+    }
+    // any time we add a score we sort the leaderboard
+    populateScores();
     // any time we add a score, make sure to save it.
     saveScores();
 }
 
+function clearScores() {
+    scores = [];
+    populateScores();
+    saveScores();
+}
 
 // simple function to align text for easy access
 function alignText(element, type) {
@@ -142,6 +159,10 @@ function getCurrentQuestion() {
 var defaultQuizHeaderText = quizHeader.textContent;
 var defaultQuizDescriptionText = quizDescription.textContent;
 
+highscoresTab.addEventListener('click', (event) => {
+    displayHighScores();
+});
+
 // create option element layout ahead of time
 var optionList = document.createElement("ol");
 // load and setup buttons in advance
@@ -209,11 +230,65 @@ function onSaveScoreEvent(event) {
     addScore(initials, timeLeft);
 
     // TODO Add followup
+    displayHighScores();
 }
 
 saveScoreElement.append(saveScoreLabel);
 saveScoreElement.append(saveScoreInput);
 saveScoreElement.append(saveScoreButton);
+
+var scoreList = document.createElement("ol");
+var goBackButton = document.createElement("button");
+goBackButton.id = "quiz-button-go-back";
+goBackButton.textContent = "Go Back";
+goBackButton.addEventListener('click', (event) => {
+    scoreList.remove();
+    goBackButton.remove();
+    clearScoresButton.remove();
+    resetDefaultPageText();
+    mainBodyContent.append(quizDescription);
+    mainBodyContent.append(startQuizButton);
+});
+var clearScoresButton = document.createElement("button");
+clearScoresButton.id = "quiz-button-clear-scores";
+clearScoresButton.textContent = "Clear Scores";
+clearScoresButton.addEventListener('click', () => {
+    clearScores();
+})
+
+var scoreListElements = [];
+
+function populateScores() {
+    scoreListElements.forEach((scoreEl) => {
+        scoreEl.remove();
+    });
+    scoreListElements = [];
+    for(key in scores) {
+        var value = scores[key];
+        var el = document.createElement("li");
+        el.setAttribute("name", key);
+        el.setAttribute("score", value.toString());
+        scoreListElements.push(el);
+    }
+
+    sortScores();
+}
+
+populateScores();
+
+function sortScores() {
+    // sort
+    scoreListElements.sort(function(el1, el2) {
+        return el2.getAttribute("score") - el1.getAttribute("score");
+    });
+
+    // run again
+    scoreListElements.forEach((el, i) => {
+        el.remove();
+        el.textContent = (i + 1).toString() + ". " + el.getAttribute("name") + " - " + el.getAttribute("score");
+        scoreList.append(el);
+    });
+}
 
 function displayQuestionResultSpan(correct, endQuiz) {
     questionResultSpan.textContent = correct? "Correct!" : "Wrong";
@@ -266,12 +341,16 @@ function loadNextQuestion() {
     return true; // return true if there was a next question loaded
 }
 
-function endQuiz(timeOut) {
+function endQuiz(timeOut, displayEndScorePage) {
     clearInterval(timerInterval); // clear the interval for the timer
     updateTime(timeOut); // update the time while setting displayed timer to zero
-    questionNumber = -1; // reset question number
+    // questionNumber = -1; // reset question number
     shuffleQuestions(); // shuffle questions again
     optionList.remove(); // remove option list
+
+    if(!displayEndScorePage) {
+        return;
+    }
 
     // Display that quiz is done
     quizHeader.textContent = "All done!";
@@ -314,7 +393,7 @@ function onOptionButtonPress(event) {
             updateTime(false);
         } else {
             // otherwise, we end the quiz: the deduction resulted in time running out
-            endQuiz(true);
+            endQuiz(true, true);
             displayQuestionResultSpan(correct, true);
             return; // we can return here
         }
@@ -322,13 +401,33 @@ function onOptionButtonPress(event) {
 
     // if we try to load another question but none remain, that was the last question
     if(!loadNextQuestion()) {
-        endQuiz(false);
+        endQuiz(false, true);
         displayQuestionResultSpan(correct, true);
         return;
     }
 
     // TODO display whether the last answer was correct or incorrect
     displayQuestionResultSpan(correct, false);
+}
+
+function displayHighScores() {
+    if(questionNumber === -1) {
+        quizDescription.remove();
+        startQuizButton.remove();
+    } else if(questionNumber === questions.length) {
+        quizDescription.remove();
+        saveScoreElement.remove();
+    } else {
+        endQuiz(true, false);
+    }
+
+    mainBodyContent.append(scoreList);
+    mainBodyContent.append(goBackButton);
+    mainBodyContent.append(clearScoresButton);
+
+    questionNumber = -1; // reset question number
+    timeLeft = 0;
+    quizHeader.textContent = "High Scores";
 }
 
 // iterate across each button and setup listener and DOM stuff
@@ -378,7 +477,7 @@ startQuizButton.addEventListener('click', function(event) {
         timeLeft--;
         // if time runs out -> clear interval and skip to end of quiz
         if(timeLeft <= 0) {
-            endQuiz(); // this will also update the time
+            endQuiz(true, true); // this will also update the time
         } else {
             // just update time to reflect the interval running
             updateTime(false);
