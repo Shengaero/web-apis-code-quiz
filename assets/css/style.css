@@ -27,20 +27,45 @@ main {
 }
 
 #quiz-header {
-    font-size: 200%;
+    font-size: 180%;
     padding: 5px;
     width: 80%;
+    margin-bottom: 20px;
 }
 
 #quiz-description {
     width: 80%;
+    margin-bottom: 20px;
 }
 
 main ol {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
     width: 80%;
 }
 
 /* all button classes who's IDs start with "quiz-button" */
 button[id^="quiz-button"] {
     background-color: violet;
+}
+
+/* medium sized screens */
+@media screen and (max-width: 768px) {
+    main {
+        margin: 40px 80px;
+    }
+    #quiz-header {
+        font-size: 160%;
+    }
+}
+
+/* small sized screens */
+@media screen and (max-width: 576px) {
+    main {
+        margin: 40px 40px;
+    }
+    #quiz-header {
+        font-size: 140%;
+    }
 }
