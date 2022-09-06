@@ -1,5 +1,6 @@
 var quizButtonIDStart = "quiz-button"; // all quiz buttons have an ID that starts with this
 var choiceAttribute = "choice"; // this will be the name of the custom attribute that holds the choice of the option
+var quizScoresLocalStorageKey = "quiz_scores"; // key for quiz scores which are stored in the local storage
 
 var mainBodyContent = document.querySelector("main"); // main body content
 var quizHeader = document.querySelector("#quiz-header"); // header, will reuse to prompt each question
@@ -10,7 +11,43 @@ var questionNumber = -1; // this will keep track of which question we are on
 var timeLeft = 0; // start at 0
 var timerInterval = undefined; // keep this undefined when timer is not running
 var resultInterval = undefined; // keep this undefined when span is not appended
+var scores = {}; // empty js object, we populate this using the loadScores function
 
+// lets load the scores ahead of time...
+function loadScores() {
+    // get stringified JS object
+    var scoresString = localStorage.getItem(quizScoresLocalStorageKey);
+
+    // if no value exists, create and set a default value to localStorage
+    if(scoresString === undefined) {
+        localStorage.setItem(quizScoresLocalStorageKey, JSON.stringify(scores));
+        return;
+    }
+
+    // otherwise parse and apply it
+    JSON.parse(scoresString, (k, v) => {
+        // sometimes the prototype accidently gets saved so make sure t0o avoid saving it
+        if(k !== "") {
+            scores[k] = v;
+        }
+    });
+}
+
+// load the scores
+loadScores();
+
+function saveScores() {
+    localStorage.setItem(quizScoresLocalStorageKey, JSON.stringify(scores));
+}
+
+function addScore(name, score) {
+    scores[name] = score;
+    // any time we add a score, make sure to save it.
+    saveScores();
+}
+
+
+// simple function to align text for easy access
 function alignText(element, type) {
     element.setAttribute("style", "text-align: " + type + ";");
 }
@@ -126,6 +163,58 @@ var buttons = [buttonA, buttonB, buttonC, buttonD];
 var questionResultSpan = document.createElement("span");
 questionResultSpan.id = "question-result";
 
+// We create a single div to hold the submit score functionality, this makes it easy to attach and detach
+var saveScoreElement = document.createElement("div");
+saveScoreElement.id = "quiz-save-score";
+
+var saveScoreLabel = document.createElement("label");
+saveScoreLabel.id = "quiz-label-save-score";
+saveScoreLabel.textContent = "Enter your initials: ";
+saveScoreLabel.setAttribute("for", "quiz-input-save-score");
+var saveScoreInput = document.createElement("input");
+saveScoreInput.id = "quiz-input-save-score";
+saveScoreInput.setAttribute("name", "quiz-input-save-score");
+saveScoreInput.addEventListener('keypress', (event) => {
+    if(event.target.nodeName === "INPUT" && event.key === 'Enter') {
+        onSaveScoreEvent(event);
+    }
+})
+var saveScoreButton = document.createElement("button");
+saveScoreButton.id = "quiz-button-save-score";
+saveScoreButton.textContent = "Submit";
+saveScoreButton.addEventListener('click', onSaveScoreEvent);
+
+// oh my god this is so scuffed and ugly 💀
+function onSaveScoreEvent(event) {
+    var initials = saveScoreInput.value.trim().toUpperCase();
+
+    if(initials.length > 2 || initials.length < 2) {
+        var splitInitials = initials.split(/\s+/);
+        var splitLen = splitInitials.length;
+        if(splitLen > 2 || splitLen < 2) {
+            initials = "";
+        } else {
+            initials = splitInitials[0].charAt(0) + splitInitials[splitLen - 1].charAt(0);
+        }
+    }
+
+    // always reset value
+    saveScoreInput.value = "";
+
+    if(initials.length == 0) {
+        window.alert("Please enter your first and last initials or a full name for your score!");
+        return;
+    }
+
+    addScore(initials, timeLeft);
+
+    // TODO Add followup
+}
+
+saveScoreElement.append(saveScoreLabel);
+saveScoreElement.append(saveScoreInput);
+saveScoreElement.append(saveScoreButton);
+
 function displayQuestionResultSpan(correct, endQuiz) {
     questionResultSpan.textContent = correct? "Correct!" : "Wrong";
 
@@ -193,6 +282,7 @@ function endQuiz(timeOut) {
 
     // End time
 
+    mainBodyContent.append(saveScoreElement);
 
     // TODO implement score
     // TODO implement high scores list

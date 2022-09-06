@@ -33,7 +33,7 @@ main {
 
 #quiz-header {
     font-size: 180%;
-    padding: 5px;
+    /* padding: 5px; */
     width: 80%;
     margin-bottom: 20px;
     text-align: center;
@@ -93,6 +93,22 @@ button[id^="quiz-button"]:hover::before {
     border-top-color: grey;
     color: grey;
     font-style: italic;
+}
+
+#quiz-save-score {
+    margin-top: 10px;
+    width: 80%;
+    display: flex;
+    flex-direction: row;
+}
+
+#quiz-label-save-score {
+    margin: auto 0px;
+    padding-right: 5px;
+}
+
+#quiz-button-save-score {
+    margin-left: 5px;
 }
 
 /* medium sized screens */
