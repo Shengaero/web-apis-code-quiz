@@ -26,8 +26,21 @@ main {
     margin: 40px 120px;
 }
 
-main h1 {
+#quiz-header {
     font-size: 200%;
     padding: 5px;
+    width: 80%;
 }
 
+#quiz-description {
+    width: 80%;
+}
+
+main ol {
+    width: 80%;
+}
+
+/* all button classes who's IDs start with "quiz-button" */
+button[id^="quiz-button"] {
+    background-color: violet;
+}

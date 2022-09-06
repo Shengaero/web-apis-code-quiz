@@ -1,7 +1,10 @@
+var quizButtonIDStart = "quiz-button"; // all quiz buttons have an ID that starts with this
+var choiceAttribute = "choice"; // this will be the name of the custom attribute that holds the choice of the option
+
 var mainBodyContent = document.querySelector("main"); // main body content
 var quizHeader = document.querySelector("#quiz-header"); // header, will reuse to prompt each question
 var quizDescription = document.querySelector("#quiz-description"); // description, will remove when quiz starts
-var startQuizButton = document.querySelector("#start-quiz-button"); // start quiz button, will start quiz
+var startQuizButton = document.querySelector("#" + quizButtonIDStart); // start quiz button, will start quiz
 var timeSpan = document.querySelector("#time"); // time span, control to modify displayed time left to complete quiz
 var questionNumber = -1; // this will keep track of which question we are on
 var timeLeft = 0; // start at 0
@@ -106,10 +109,10 @@ var buttonC = document.createElement("button");
 var buttonD = document.createElement("button");
 // set ids of buttons to the option they represent.
 // this will help us later when determining if it's the correct answer, as we can compare it to the one in the question json object
-buttonA.id = "a";
-buttonB.id = "b";
-buttonC.id = "c";
-buttonD.id = "d";
+buttonA.id = quizButtonIDStart + "-a";
+buttonB.id = quizButtonIDStart + "-b";
+buttonC.id = quizButtonIDStart + "-c";
+buttonD.id = quizButtonIDStart + "-d";
 
 // array of buttons is good for iterating
 var buttons = [buttonA, buttonB, buttonC, buttonD];
@@ -129,8 +132,8 @@ function loadNextQuestion() {
     quizHeader.textContent = question.prompt;
 
     buttons.forEach((button) => {
-        // set the text content of the button to the property matching the button element's ID
-        button.textContent = question[button.id];
+        // set the text content of the button to the property matching the button element's choice attribute
+        button.textContent = question[button.getAttribute(choiceAttribute)];
     });
 
     return true; // return true if there was a next question loaded
@@ -162,7 +165,7 @@ function endQuiz(timeOut) {
 // WHEN the quiz ends
 // THEN display a screen for the user to input their name to go on a high score list
 function onOptionButtonPress(event) {
-    var buttonId = event.target.id;
+    var buttonId = event.target.getAttribute(choiceAttribute);
     var correct = buttonId === questions[questionNumber].answer;
     // if the answer was incorrect, we need to deduct remaining time and possibly end the quiz
     if(!correct) {
@@ -194,7 +197,12 @@ buttons.forEach((button) => {
     // create list item and span for label
     var listItem = document.createElement("li");
     var labelSpan = document.createElement("span");
-    labelSpan.textContent = button.id.toUpperCase() + ": ";
+     // last char of id is choice
+    var choice = button.id.charAt(button.id.length - 1);
+     // set choice attribute to the letter of the choice
+    button.setAttribute(choiceAttribute, choice);
+     // set the span label text to the letter of the choice
+    labelSpan.textContent = choice.toUpperCase();
     // append span to list item
     listItem.appendChild(labelSpan);
     // then append button
